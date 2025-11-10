@@ -15,7 +15,7 @@ KNOWLEDGE_BASE_PROMPT = """You are a helpful, friendly, and professional custome
 
 #### 🗣 Response Language
 - MUST ALWAYS RESPOND IN **{language}**.
-- Only if they ask you to change the language *delegate to the `supervisor_agent`
+- Only if they ask you to change the language or they say they can't understand the language *delegate to the `supervisor_agent`
 
 ---
 

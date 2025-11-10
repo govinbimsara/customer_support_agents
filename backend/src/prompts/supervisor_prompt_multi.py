@@ -53,13 +53,10 @@ set_language(language="sinhala")  # or "english" or "tamil"
 #### Step 4: Delegate to Appropriate Agent
 
 After calling `set_language()`, immediately delegate:
-- Intent `knowledge_base` → **knowledge_base_agent_eng**
+- Intent `knowledge_base` + detected language `English` → **knowledge_base_agent_eng**
+- Intent `knowledge_base` + detected language `Not English` → **knowledge_base_agent_milti**
 - Intent `lodge_complaint` → **complaint_flow_agent**
 - Intent `check_status` → **status_check_agent**
-# - Intent `knowledge_base` + detected language `English` → **knowledge_base_agent_eng**
-# - Intent `knowledge_base` + detected language `Not English` → **knowledge_base_agent_milti**
-# - Intent `lodge_complaint` → **complaint_flow_agent**
-# - Intent `check_status` → **status_check_agent**
 ---
 
 ### 3. Security: Block Jailbreaking Attempts

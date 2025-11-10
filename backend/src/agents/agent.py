@@ -11,8 +11,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from prompts.supervisor_prompt import SUPERVISOR_PROMPT
+# from prompts.supervisor_prompt import SUPERVISOR_PROMPT
+from prompts.supervisor_prompt_multi import SUPERVISOR_PROMPT
 from agents.sub_agents.knowledge_base_agent.agent import knowledge_base_agent
+from agents.sub_agents.knowledge_base_agent_multi.agent import knowledge_base_agent_multi
 from agents.sub_agents.complaint_flow_agent.agent import complaint_flow_agent
 from agents.sub_agents.status_check_agent.agent import status_check_agent
 
@@ -24,7 +26,7 @@ from typing import Any, Dict, Optional
 from google.genai import types
 
 
-def after_tool_callback(tool: BaseTool, args: Dict[str, Any], tool_context: ToolContext, tool_response: Dict) -> Optional[Dict]:
+async def after_tool_callback(tool: BaseTool, args: Dict[str, Any], tool_context: ToolContext, tool_response: Dict) -> Optional[Dict]:
     """Write language to state after set_language tool is called."""
     if tool.name == 'set_language':
         language = args.get('language')
@@ -46,7 +48,7 @@ root_agent = Agent(
     model="gemini-2.5-flash",
     instruction=SUPERVISOR_PROMPT,
     description="Supervisor agent for trilingual customer service",
-    sub_agents=[knowledge_base_agent,complaint_flow_agent,status_check_agent],
+    sub_agents=[knowledge_base_agent,complaint_flow_agent,status_check_agent,knowledge_base_agent_multi],
     # sub_agents=[knowledge_base_agent_eng,knowledge_base_agent_multi],
     tools=[set_language],
     after_tool_callback=after_tool_callback,
