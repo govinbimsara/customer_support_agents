@@ -1,6 +1,9 @@
 """Vertex AI RAG Engine integration for knowledge base queries."""
 
+import logging
 from typing import Any
+
+from google.api_core import exceptions as google_exceptions
 from vertexai.preview import rag
 
 from .config import (
@@ -10,6 +13,8 @@ from .config import (
     LOCATION,
     PROJECT_ID,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def query_knowledge_base(query: str) -> dict[str, Any]:
@@ -52,9 +57,31 @@ def query_knowledge_base(query: str) -> dict[str, Any]:
             "results": results,
         }
 
-    except Exception as e:
+    except google_exceptions.NotFound:
+        logger.error(f"RAG corpus not found: {CORPUS_ID}")
         return {
             "status": "error",
-            "message": f"Error querying corpus: {str(e)}",
+            "message": "Knowledge base not configured",
+            "query": query,
+        }
+    except google_exceptions.PermissionDenied:
+        logger.error("Permission denied accessing RAG corpus")
+        return {
+            "status": "error",
+            "message": "Access denied to knowledge base",
+            "query": query,
+        }
+    except google_exceptions.DeadlineExceeded:
+        logger.warning(f"RAG query timeout for: {query}")
+        return {
+            "status": "error",
+            "message": "Knowledge base query timeout",
+            "query": query,
+        }
+    except Exception as e:
+        logger.exception(f"Unexpected error querying RAG: {query}")
+        return {
+            "status": "error",
+            "message": f"Knowledge base error: {type(e).__name__}",
             "query": query,
         }

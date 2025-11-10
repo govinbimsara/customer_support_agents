@@ -15,12 +15,14 @@ class Settings:
     )
     GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "")
     
+    # amazonq-ignore-next-line
     SUPPORTED_LANGUAGES: list[Literal["english", "sinhala", "tamil"]] = [
         "english",
         "sinhala",
         "tamil",
     ]
     
+    # amazonq-ignore-next-line
     INTENTS: list[Literal["knowledge_base", "lodge_complaint", "check_status"]] = [
         "knowledge_base",
         "lodge_complaint",

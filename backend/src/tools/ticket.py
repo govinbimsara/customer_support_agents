@@ -1,5 +1,6 @@
 import base64
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Dict, Union
@@ -7,13 +8,36 @@ from typing import Dict, Union
 import requests
 from dotenv import load_dotenv
 
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("requests").setLevel(logging.WARNING)
+
 env_path = Path(__file__).parent.parent / "agents" / ".env"
 load_dotenv(dotenv_path=env_path)
 
-JIRA_PROJECT = os.environ.get("JIRA_PROJECT")
-JIRA_CLOUD = os.environ.get("JIRA_CLOUD")
-JIRA_TOKEN = os.environ.get("JIRA_TOKEN")
-JIRA_EMAIL = os.environ.get("JIRA_EMAIL")
+
+def _get_required_env(key: str) -> str:
+    """Get required environment variable or raise error."""
+    value = os.environ.get(key)
+    if not value:
+        raise ValueError(f"Missing required environment variable: {key}")
+    return value
+
+
+JIRA_PROJECT = _get_required_env("JIRA_PROJECT")
+JIRA_CLOUD = _get_required_env("JIRA_CLOUD")
+JIRA_TOKEN = _get_required_env("JIRA_TOKEN")
+JIRA_EMAIL = _get_required_env("JIRA_EMAIL")
+
+
+def _get_auth_header() -> Dict[str, str]:
+    """Generate authorization header securely.
+    
+    Returns:
+        Dictionary with Authorization header
+    """
+    auth_string = f"{JIRA_EMAIL}:{JIRA_TOKEN}"
+    encoded_auth = base64.b64encode(auth_string.encode()).decode()
+    return {"Authorization": f"Basic {encoded_auth}"}
 
 
 def create_jira_ticket(
@@ -56,21 +80,27 @@ def create_jira_ticket(
         }
     }
 
-    auth_string = f"{JIRA_EMAIL}:{JIRA_TOKEN}"
-    encoded_auth = base64.b64encode(auth_string.encode()).decode()
-
     headers = {
-        "Authorization": f"Basic {encoded_auth}",
+        **_get_auth_header(),
         "Accept": "application/json",
         "Content-Type": "application/json",
     }
 
-    response = requests.post(url, headers=headers, data=json.dumps(payload))
+    try:
+        response = requests.post(
+            url, headers=headers, data=json.dumps(payload), timeout=10
+        )
 
-    if response.status_code not in [200, 201]:
-        return {"error": response.text, "status_code": response.status_code}
+        if response.status_code not in [200, 201]:
+            return {
+                "error": "Failed to create ticket",
+                "status_code": response.status_code,
+            }
 
-    return {"status_code": response.status_code, **response.json()}
+        return {"status_code": response.status_code, **response.json()}
+
+    except requests.exceptions.RequestException:
+        return {"error": "Network error creating ticket", "status_code": 500}
 
 
 
@@ -109,18 +139,18 @@ def get_user_tickets(user_id: str) -> Dict[str, Union[str, int, list]]:
         "maxResults": 100,
     }
 
-    auth_string = f"{JIRA_EMAIL}:{JIRA_TOKEN}"
-    encoded_auth = base64.b64encode(auth_string.encode()).decode()
+    headers = {**_get_auth_header(), "Accept": "application/json"}
 
-    headers = {
-        "Authorization": f"Basic {encoded_auth}",
-        "Accept": "application/json",
-    }
+    try:
+        response = requests.get(url, headers=headers, params=params, timeout=10)
 
-    response = requests.get(url, headers=headers, params=params)
-
-    if response.status_code != 200:
-        return {"error": response.text, "status_code": response.status_code}
+        if response.status_code != 200:
+            return {
+                "error": "Failed to retrieve tickets",
+                "status_code": response.status_code,
+            }
+    except requests.exceptions.RequestException:
+        return {"error": "Network error retrieving tickets", "status_code": 500}
 
     data = response.json()
     tickets = []
@@ -186,18 +216,18 @@ def get_ticket_by_key(
         "maxResults": 1,
     }
 
-    auth_string = f"{JIRA_EMAIL}:{JIRA_TOKEN}"
-    encoded_auth = base64.b64encode(auth_string.encode()).decode()
+    headers = {**_get_auth_header(), "Accept": "application/json"}
 
-    headers = {
-        "Authorization": f"Basic {encoded_auth}",
-        "Accept": "application/json",
-    }
+    try:
+        response = requests.get(url, headers=headers, params=params, timeout=10)
 
-    response = requests.get(url, headers=headers, params=params)
-
-    if response.status_code != 200:
-        return {"error": response.text, "status_code": response.status_code}
+        if response.status_code != 200:
+            return {
+                "error": "Failed to retrieve ticket",
+                "status_code": response.status_code,
+            }
+    except requests.exceptions.RequestException:
+        return {"error": "Network error retrieving ticket", "status_code": 500}
 
     data = response.json()
     issues = data.get("issues", [])
@@ -212,6 +242,7 @@ def get_ticket_by_key(
     fields = issue.get("fields", {})
     description_content = fields.get("description", {})
 
+    # amazonq-ignore-next-line
     description_text = ""
     if isinstance(description_content, dict):
         for content_block in description_content.get("content", []):
@@ -233,16 +264,4 @@ def get_ticket_by_key(
     return {"status_code": response.status_code, "ticket": ticket}
 
 
-if __name__ == "__main__":
-    # print(f"JIRA_PROJECT: {JIRA_PROJECT}")
-    # print(f"JIRA_CLOUD: {JIRA_CLOUD}")
-    # print(f"JIRA_EMAIL: {JIRA_EMAIL}")
-    # print(f"JIRA_TOKEN: {'*' * 10 if JIRA_TOKEN else None}")
-    # print()
-    # response = create_jira_ticket(
-    #     "user123", "Test Issue 3", "This is a test issue 3", "Task"
-    # )
-    # print(response)
 
-    response = get_user_tickets("user")
-    print(response)

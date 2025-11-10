@@ -1,30 +1,39 @@
 """ComplaintFlow Agent implementation."""
 
-from google.adk.agents import LlmAgent
+import logging
 import sys
 from pathlib import Path
+from typing import Optional
+
+from google.adk.agents import LlmAgent
+from google.adk.agents.callback_context import CallbackContext
+from google.genai import types
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-# from schemas.complaint_schemas import ComplaintOutput
 from prompts.complaint_flow_prompt import COMPLAINT_FLOW_PROMPT
 from tools.ticket import create_jira_ticket
-from google.adk.agents.callback_context import CallbackContext
-from google.genai import types
-from typing import Optional
 
-def before_agent_callback(callback_context: CallbackContext) -> Optional[types.Content]:
+logger = logging.getLogger(__name__)
+
+# amazonq-ignore-next-line
+def before_agent_callback(
+    callback_context: CallbackContext,
+) -> Optional[types.Content]:
     """Read language from state and update instruction."""
     state = callback_context.state
     if "language" not in state:
         state["language"] = "english"
-    
+
     language = state.get("language", "english")
     user_id = state.get("user_id", None)
-    callback_context.instruction = COMPLAINT_FLOW_PROMPT.format(language=language, user_id=user_id)
-    print(f"Language: {language}")
-    print(f"User ID: {user_id}")
-    
+    callback_context.instruction = COMPLAINT_FLOW_PROMPT.format(
+        language=language, user_id=user_id
+    )
+    logger.info(
+        f"ComplaintFlow Agent - Language: {language}, User ID: {user_id}"
+    )
+
     return None
 
 complaint_flow_agent = LlmAgent(

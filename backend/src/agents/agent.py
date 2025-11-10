@@ -1,46 +1,57 @@
 """Supervisor Agent - Root agent for trilingual customer service."""
 
+import logging
+import sys
+from pathlib import Path
+from typing import Any, Dict, Optional
+
 from google.adk.agents import Agent
 from google.adk.apps.app import App
 from google.adk.agents.context_cache_config import ContextCacheConfig
-# from google.adk.agents.events_compaction_config import EventsCompactionConfig
-
 from google.adk.plugins.context_filter_plugin import ContextFilterPlugin
-import sys
-from pathlib import Path
+from google.adk.tools.base_tool import BaseTool
+from google.adk.tools.tool_context import ToolContext
+from google.genai import types
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# from prompts.supervisor_prompt import SUPERVISOR_PROMPT
 from prompts.supervisor_prompt_multi import SUPERVISOR_PROMPT
 from agents.sub_agents.knowledge_base_agent.agent import knowledge_base_agent
-from agents.sub_agents.knowledge_base_agent_multi.agent import knowledge_base_agent_multi
+from agents.sub_agents.knowledge_base_agent_multi.agent import (
+    knowledge_base_agent_multi
+)
 from agents.sub_agents.complaint_flow_agent.agent import complaint_flow_agent
 from agents.sub_agents.status_check_agent.agent import status_check_agent
+from tools.set_language import set_language
+
+logger = logging.getLogger(__name__)
 
 
-from tools .set_language import set_language
-from google.adk.tools.base_tool import BaseTool
-from google.adk.tools.tool_context import ToolContext
-from typing import Any, Dict, Optional
-from google.genai import types
-
-
-async def after_tool_callback(tool: BaseTool, args: Dict[str, Any], tool_context: ToolContext, tool_response: Dict) -> Optional[Dict]:
+async def after_tool_callback(
+    tool: BaseTool,
+    args: Dict[str, Any],
+    tool_context: ToolContext,
+    tool_response: Dict,
+) -> Optional[Dict]:
     """Write language to state after set_language tool is called."""
-    if tool.name == 'set_language':
-        language = args.get('language')
+    if tool.name == "set_language":
+        language = args.get("language")
         if language:
-            tool_context.state['language'] = language
-            print(f"Language set to {language}")
+            tool_context.state["language"] = language
+            logger.info(f"Language set to: {language}")
+        else:
+            logger.warning("set_language called without language argument")
 
-    user_id = tool_context._invocation_context.user_id
+    try:
+        user_id = tool_context._invocation_context.user_id
+    except AttributeError:
+        user_id = None
+        logger.warning("Could not access user_id from invocation context")
+
     if user_id:
-        print(f"User ID: {user_id}")
-        tool_context.state['user_id'] = user_id
-    
+        logger.info(f"User ID: {user_id}")
+        tool_context.state["user_id"] = user_id
 
-    
     return None
 
 root_agent = Agent(
@@ -48,8 +59,12 @@ root_agent = Agent(
     model="gemini-2.5-flash",
     instruction=SUPERVISOR_PROMPT,
     description="Supervisor agent for trilingual customer service",
-    sub_agents=[knowledge_base_agent,complaint_flow_agent,status_check_agent,knowledge_base_agent_multi],
-    # sub_agents=[knowledge_base_agent_eng,knowledge_base_agent_multi],
+    sub_agents=[
+        knowledge_base_agent,
+        complaint_flow_agent,
+        status_check_agent,
+        knowledge_base_agent_multi,
+    ],
     tools=[set_language],
     after_tool_callback=after_tool_callback,
     generate_content_config=types.GenerationConfig(
@@ -74,6 +89,6 @@ app = App(
     #     overlap_size=1
     # ),
     plugins=[
-        ContextFilterPlugin(num_invocations_to_keep=10)  # Keep last 5 interactions
+        ContextFilterPlugin(num_invocations_to_keep=5)
     ]
 )

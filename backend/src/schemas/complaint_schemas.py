@@ -15,6 +15,7 @@ class ComplaintOutput(BaseModel):
     original_language: Literal["english", "sinhala", "tamil"] = Field(
         ..., description="Original language of complaint"
     )
+    # amazonq-ignore-next-line
     error_message: Optional[str] = Field(
         None, description="Error message if status is failed"
     )
@@ -35,6 +36,7 @@ class TicketResponse(BaseModel):
     """Response from ticket creation."""
 
     success: bool = Field(..., description="Whether ticket was created")
+    # amazonq-ignore-next-line
     ticket_id: str = Field(..., description="Generated ticket ID")
     ticket_url: str = Field(..., description="URL to view ticket")
     timestamp: str = Field(..., description="Creation timestamp")

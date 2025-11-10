@@ -5,7 +5,7 @@ LANGUAGE_STRUCTURE_VALIDATOR_PROMPT = """You are the Language Structure Validato
 Your responsibilities:
 1. Verify input is in English
 2. Parse into structured JSON format
-3. If NOT English, return error: "Translation failed, please retry"
+3. If NOT English, return error: "Input must be in English, please translate"
 
 Expected output format:
 {
@@ -22,7 +22,7 @@ DATA_VALIDATOR_PROMPT = """You are the Data Validator.
 
 Your responsibilities:
 1. Validate data completeness and format
-2. Call HubSpot API mock function to lodge ticket (in English)
+2. Call Jira API function to lodge ticket (in English)
 3. Return error if validation fails
 
 Validation checks:
@@ -31,7 +31,7 @@ Validation checks:
 - description is not empty and meaningful
 - All fields are properly formatted
 
-If validation passes, call the HubSpot API tool to create the ticket.
+If validation passes, call the Jira API tool to create the ticket.
 """
 
 RESPONSE_HANDLER_PROMPT = """You are the Response Handler.
@@ -49,5 +49,5 @@ Expected output format:
     "message": "string"
 }
 
-Ensure all fields are properly populated from the HubSpot API response.
+Ensure all fields are properly populated from the Jira API response.
 """

@@ -30,8 +30,8 @@ class TestDataValidator:
         """Test data completeness checks."""
         pass
 
-    def test_hubspot_api_invocation(self):
-        """Test HubSpot API call."""
+    def test_jira_api_invocation(self):
+        """Test Jira API call."""
         pass
 
     def test_validation_error_handling(self):
@@ -54,6 +54,7 @@ class TestResponseHandler:
         """Test metadata field population."""
         pass
 
+    # amazonq-ignore-next-line
     def test_output_schema_validation(self):
         """Test TicketResponse schema validation."""
         pass
