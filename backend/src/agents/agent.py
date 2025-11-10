@@ -31,19 +31,23 @@ from tools.set_language import set_language
 
 logger = logging.getLogger(__name__)
 
-#Setup langfuse observability
-langfuse = get_client()
- 
-# Verify connection
-if langfuse.auth_check():
-    print("Langfuse client is authenticated and ready!")
-else:
-    print("Authentication failed. Please check your credentials and host.")
+# Prevent double initialization using module-level flag
+_initialized = False
+if not _initialized:
+    #Setup langfuse observability
+    langfuse = get_client()
+     
+    # Verify connection
+    if langfuse.auth_check():
+        print("Langfuse client is authenticated and ready!")
+    else:
+        print("Authentication failed. Please check your credentials and host.")
 
 
-#Setup opentelemtry instrumentation
-GoogleADKInstrumentor().instrument()
-logger.info("OpenTelemetry instrumentation setup complete.")
+    #Setup opentelemtry instrumentation
+    GoogleADKInstrumentor().instrument()
+    logger.info("OpenTelemetry instrumentation setup complete.")
+    _initialized = True
 
 async def after_tool_callback(
     tool: BaseTool,
@@ -72,41 +76,46 @@ async def after_tool_callback(
 
     return None
 
-root_agent = Agent(
-    name="supervisor_agent",
-    model="gemini-2.5-flash",
-    instruction=SUPERVISOR_PROMPT,
-    description="Supervisor agent for trilingual customer service",
-    sub_agents=[
-        knowledge_base_agent,
-        complaint_flow_agent,
-        status_check_agent,
-        knowledge_base_agent_multi,
-    ],
-    tools=[set_language],
-    after_tool_callback=after_tool_callback,
-    generate_content_config=types.GenerationConfig(
-        temperature=0.3,
-        top_k=40,
-        top_p=0.8,
-        # candidate_count=1,
-        # max_output_tokens=2048,
-    ),
-)
+# Only create agents if not already created
+if not _initialized or 'root_agent' not in dir():
+    root_agent = Agent(
+        name="supervisor_agent",
+        model="gemini-2.5-flash",
+        instruction=SUPERVISOR_PROMPT,
+        description="Supervisor agent for trilingual customer service",
+        sub_agents=[
+            knowledge_base_agent,
+            complaint_flow_agent,
+            status_check_agent,
+            knowledge_base_agent_multi,
+        ],
+        tools=[set_language],
+        after_tool_callback=after_tool_callback,
+        generate_content_config=types.GenerationConfig(
+            temperature=0.3,
+            top_k=40,
+            top_p=0.8,
+            # candidate_count=1,
+            # max_output_tokens=2048,
+        ),
+    )
 
-app = App(
-    name="agents",
-    root_agent=root_agent,
-    context_cache_config=ContextCacheConfig(
-        min_tokens=1500,
-        ttl_seconds=600,  # 10 mins for conversation
-        cache_intervals=5,  # Maximum invocations before cache refresh
-    ),
-    # events_compaction_config=EventsCompactionConfig(
-    #     compaction_interval=3,
-    #     overlap_size=1
-    # ),
-    plugins=[
-        ContextFilterPlugin(num_invocations_to_keep=5)
-    ]
-)
+    app = App(
+        name="agents",
+        root_agent=root_agent,
+        context_cache_config=ContextCacheConfig(
+            min_tokens=1500,
+            ttl_seconds=600,  # 10 mins for conversation
+            cache_intervals=5,  # Maximum invocations before cache refresh
+        ),
+        # events_compaction_config=EventsCompactionConfig(
+        #     compaction_interval=3,
+        #     overlap_size=1
+        # ),
+        plugins=[
+            ContextFilterPlugin(num_invocations_to_keep=5)
+        ]
+    )
+else:
+    # Module already initialized, agents already exist
+    pass

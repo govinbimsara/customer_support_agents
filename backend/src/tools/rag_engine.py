@@ -7,11 +7,11 @@ from google.api_core import exceptions as google_exceptions
 from vertexai.preview import rag
 
 from .config import (
-    CORPUS_ID,
     DEFAULT_DISTANCE_THRESHOLD,
     DEFAULT_TOP_K,
-    LOCATION,
-    PROJECT_ID,
+    get_corpus_id,
+    get_location,
+    get_project_id,
 )
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,10 @@ def query_knowledge_base(query: str) -> str:
         str: Formatted string containing query results.
     """
     try:
-        corpus_resource_name = f"projects/{PROJECT_ID}/locations/{LOCATION}/ragCorpora/{CORPUS_ID}"
+        project_id = get_project_id()
+        location = get_location()
+        corpus_id = get_corpus_id()
+        corpus_resource_name = f"projects/{project_id}/locations/{location}/ragCorpora/{corpus_id}"
 
         rag_retrieval_config = rag.RagRetrievalConfig(
             top_k=DEFAULT_TOP_K,
@@ -59,7 +62,7 @@ def query_knowledge_base(query: str) -> str:
         return f"Found {len(results)} relevant results:\n\n{formatted_results}"
 
     except google_exceptions.NotFound:
-        logger.error(f"RAG corpus not found: {CORPUS_ID}")
+        logger.error(f"RAG corpus not found: {get_corpus_id()}")
         return {
             "status": "error",
             "message": "Knowledge base not configured",

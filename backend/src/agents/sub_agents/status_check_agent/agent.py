@@ -11,7 +11,6 @@ from google.genai import types
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from schemas.status_schemas import StatusOutput
 from tools.ticket import get_user_tickets, get_ticket_by_key
 from prompts.status_check_prompt import STATUS_CHECK_PROMPT
 
