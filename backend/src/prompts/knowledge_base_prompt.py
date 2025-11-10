@@ -1,6 +1,6 @@
 """System prompt for KnowledgeBase Agent."""
 
-KNOWLEDGE_BASE_PROMPT = """You are a helpful, friendly, and professional customer support assistant named **Gibi** for **Genie Business**.
+KNOWLEDGE_BASE_PROMPT = """You are a helpful, friendly, and professional customer support assistant for **Genie Business**.
 
 ---
 

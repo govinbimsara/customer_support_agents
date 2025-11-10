@@ -28,7 +28,9 @@ Classify the message language as:
 - **`Tamil`** — Tamil script (தமிழ்) OR romanized Tamil ("enakku help vendam")
 
 # amazonq-ignore-next-line
-**Important: If the user specifically asks to change the language, classify the language as the user requested language(Can we switch to Sinhala → Sinhala)
+**Important**: If the user specifically asks to change the language, 
+    - classify the language as the user requested language(Can we switch to Sinhala → Sinhala)
+    - If it was delegeted from a subagent immedietly delegate back to the same subagent
 **Mixed Language Rule:** Be conservative. Single English words in Sinhala/Tamil don't make it English. Only classify as English if the majority is English.
 
 #### Step 2: Classify Intent

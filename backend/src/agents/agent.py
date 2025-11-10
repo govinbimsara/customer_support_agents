@@ -2,8 +2,13 @@
 
 import logging
 import sys
+import warnings
 from pathlib import Path
 from typing import Any, Dict, Optional
+
+# Suppress telemetry warnings
+warnings.filterwarnings('ignore', message='Invalid type NoneType')
+logging.getLogger('opentelemetry').setLevel(logging.ERROR)
 
 from google.adk.agents import Agent
 from google.adk.apps.app import App
@@ -12,20 +17,33 @@ from google.adk.plugins.context_filter_plugin import ContextFilterPlugin
 from google.adk.tools.base_tool import BaseTool
 from google.adk.tools.tool_context import ToolContext
 from google.genai import types
+from langfuse import get_client
+from openinference.instrumentation.google_adk import GoogleADKInstrumentor
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from prompts.supervisor_prompt_multi import SUPERVISOR_PROMPT
 from agents.sub_agents.knowledge_base_agent.agent import knowledge_base_agent
-from agents.sub_agents.knowledge_base_agent_multi.agent import (
-    knowledge_base_agent_multi
-)
+from agents.sub_agents.knowledge_base_agent_multi.agent import knowledge_base_agent_multi
 from agents.sub_agents.complaint_flow_agent.agent import complaint_flow_agent
 from agents.sub_agents.status_check_agent.agent import status_check_agent
 from tools.set_language import set_language
 
 logger = logging.getLogger(__name__)
 
+#Setup langfuse observability
+langfuse = get_client()
+ 
+# Verify connection
+if langfuse.auth_check():
+    print("Langfuse client is authenticated and ready!")
+else:
+    print("Authentication failed. Please check your credentials and host.")
+
+
+#Setup opentelemtry instrumentation
+GoogleADKInstrumentor().instrument()
+logger.info("OpenTelemetry instrumentation setup complete.")
 
 async def after_tool_callback(
     tool: BaseTool,

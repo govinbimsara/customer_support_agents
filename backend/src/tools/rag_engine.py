@@ -17,15 +17,14 @@ from .config import (
 logger = logging.getLogger(__name__)
 
 
-def query_knowledge_base(query: str) -> dict[str, Any]:
+def query_knowledge_base(query: str) -> str:
     """Query Vertex AI RAG corpus and retrieve relevant information.
 
     Args:
         query: User query to search knowledge base.
 
     Returns:
-        dict[str, Any]: Dictionary containing query results with status,
-            message, and results list.
+        str: Formatted string containing query results.
     """
     try:
         corpus_resource_name = f"projects/{PROJECT_ID}/locations/{LOCATION}/ragCorpora/{CORPUS_ID}"
@@ -50,12 +49,14 @@ def query_knowledge_base(query: str) -> dict[str, Any]:
                     "source_uri": ctx.source_uri if hasattr(ctx, "source_uri") else "",
                 })
 
-        return {
-            "status": "success" if results else "warning",
-            "message": f"Found {len(results)} results" if results else "No results found",
-            "query": query,
-            "results": results,
-        }
+        if not results:
+            return "No relevant information found in the knowledge base."
+        
+        formatted_results = "\n\n".join(
+            f"Result {i+1} (relevance: {r['score']:.2f}):\n{r['text']}"
+            for i, r in enumerate(results)
+        )
+        return f"Found {len(results)} relevant results:\n\n{formatted_results}"
 
     except google_exceptions.NotFound:
         logger.error(f"RAG corpus not found: {CORPUS_ID}")
