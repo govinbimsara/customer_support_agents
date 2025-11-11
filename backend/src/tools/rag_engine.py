@@ -3,6 +3,7 @@
 import logging
 from typing import Any
 
+import vertexai
 from google.api_core import exceptions as google_exceptions
 from vertexai.preview import rag
 
@@ -30,6 +31,12 @@ def query_knowledge_base(query: str) -> str:
         project_id = get_project_id()
         location = get_location()
         corpus_id = get_corpus_id()
+        
+        logger.info(f"RAG Query - Project: {project_id}, Location: {location}, Corpus: {corpus_id}")
+        
+        # Initialize Vertex AI with runtime environment variables
+        vertexai.init(project=project_id, location=location)
+        
         corpus_resource_name = f"projects/{project_id}/locations/{location}/ragCorpora/{corpus_id}"
 
         rag_retrieval_config = rag.RagRetrievalConfig(

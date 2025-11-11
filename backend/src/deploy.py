@@ -80,6 +80,9 @@ def deploy_agent_engine_app() -> agent_engines.AgentEngine:
         env_vars["PROJECT"] = deployment_config.project
         env_vars["LOCATION"] = deployment_config.location
         print(f"📋 Corpus ID: {deployment_config.corpus_id}")
+        print(f"📋 Project: {deployment_config.project}")
+        print(f"📋 Location: {deployment_config.location}")
+        
 
     # Add Langfuse credentials if available
     langfuse_secret = os.environ.get("LANGFUSE_SECRET_KEY")
